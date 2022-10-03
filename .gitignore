@@ -1,0 +1,16 @@
+node_modules
+.env
+coverage
+coverage.json
+typechain
+typechain-types
+
+#Hardhat files
+.idea
+artifacts/*
+cache
+./coverage
+.DS_Store
+deployments/localhost
+generated/
+build/

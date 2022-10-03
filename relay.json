@@ -1,0 +1,13 @@
+{
+  "relayer": {
+    "relayerId": "073df496-86fa-413e-ae2b-3f7a5c3d024b",
+    "name": "MetaTxGamer mumbai",
+    "address": "0xa06e1fe55152a9ba703d5637df13ac54552a5279",
+    "network": "mumbai",
+    "createdAt": "2022-10-03T19:46:49.638Z",
+    "paused": false,
+    "policies": {},
+    "minBalance": "100000000000000000",
+    "pendingTxCost": "0"
+  }
+}
