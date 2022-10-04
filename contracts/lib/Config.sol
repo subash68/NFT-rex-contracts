@@ -31,14 +31,6 @@ library Config {
         bool isRoyaltiesEnabled;
         // Secondary market royalties in basis points (100 bps = 1%)
         uint256 royaltiesBps;
-        // Primary mint price
-        uint256 primaryMintPrice;
-        // Primary mint royalty percentage in basis point (100 bps = 1%)
-        // uint256 primaryRoyaltiesBps;
-
-        address treasuryAddress;
-        // bool primaryRoyaltyEnabled;
-        // uint256 primaryRoyaltyBps;
     }
 
     // Tiers can be managed from web3 API backend - only metadata changes for tiers

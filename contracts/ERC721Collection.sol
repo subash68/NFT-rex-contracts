@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import "@openzeppelin/contracts/metatx/MinimalForwarder.sol";
-
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
@@ -67,21 +66,15 @@ contract ERC721NFTCustom is Initializable, ERC721URIStorage, ERC2771Context {
     event RoyaltyAddressUpdated(address royaltiesSplitter);
 
     constructor(
-        address _minimalForwarder
-    ) ERC2771Context(address(_minimalForwarder)) ERC721("Decir Contract", "NFT") {
-        deployer = _msgSender();
-        forwarder = address(_minimalForwarder);
-    }
-
-    function initialize(
         Config.Deployment memory deploymentConfig,
         Config.Runtime memory runtimeConfig,
-        RoleAddresses[] memory rolesAddresses
-    ) initializer public  {
-        // This is overidden from base class
+        address _minimalForwarder
+    ) ERC2771Context(address(_minimalForwarder)) ERC721(deploymentConfig.name, deploymentConfig.symbol) {
+        deployer = _msgSender();
+        forwarder = address(_minimalForwarder);
+
         _name = deploymentConfig.name;
         _symbol= deploymentConfig.symbol;
-        // ERC721(deploymentConfig.name, deploymentConfig.symbol);
 
         royaltiesEnabled = runtimeConfig.isRoyaltiesEnabled;
         if (royaltiesEnabled) {
@@ -95,14 +88,9 @@ contract ERC721NFTCustom is Initializable, ERC721URIStorage, ERC2771Context {
 
         baseURI = runtimeConfig.baseURI;
 
-        primaryMintPrice = runtimeConfig.primaryMintPrice;
-
         // Initialize counter address
         _tokenCounter = deploymentConfig.tokenCounter;
-        _treasury = runtimeConfig.treasuryAddress;
-
-        // Assign more extensive roles to other
-        _initRoles(_msgSender(), rolesAddresses);
+        // _treasury = runtimeConfig.treasuryAddress;
     }
 
     function setRoyaltyAddress(address _royaltySplitter) public {
@@ -113,7 +101,7 @@ contract ERC721NFTCustom is Initializable, ERC721URIStorage, ERC2771Context {
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, AccessControl)
+        override(ERC721)
         returns (bool)
     {
         return
@@ -174,17 +162,14 @@ contract ERC721NFTCustom is Initializable, ERC721URIStorage, ERC2771Context {
 
     // Counter implementation
     function mintToCaller(
-        address caller,
         string memory tokenURI
-    ) public onlyRole(MINT_ROLE) returns (uint256) {
+    ) public returns (uint256) {
 
         ICounter(_tokenCounter).increment();
         uint256 tokenId = ICounter(_tokenCounter).count();
 
-        _safeMint(caller, tokenId);
+        _safeMint(_msgSender(), tokenId);
         _setTokenURI(tokenId, tokenURI);
-
-        // TODO: revoke mint role to caller
 
         return tokenId;
     }
@@ -221,7 +206,7 @@ contract ERC721NFTCustom is Initializable, ERC721URIStorage, ERC2771Context {
         uint256 _tokenId,
         string memory _tokenUri,
         bool _isFreezeTokenUri
-    ) public onlyRole(UPDATE_TOKEN_ROLE) {
+    ) public {
         require(
             _exists(_tokenId),
             "NFT: update URI query for nonexistent token"
@@ -247,60 +232,6 @@ contract ERC721NFTCustom is Initializable, ERC721URIStorage, ERC2771Context {
             freezeTokenUris[_tokenId] = true;
             emit PermanentURI(tokenURI(_tokenId), _tokenId);
         }
-    }
-
-    function transferByOwner(address _to, uint256 _tokenId)
-        public
-        onlyRole(TRANSFER_ROLE)
-    {
-        require(tokensTransferable, "NFT: Transfers by owner are disabled");
-        _safeTransfer(_owner, _to, _tokenId, "");
-    }
-
-    function burn(uint256 _tokenId) public onlyRole(BURN_ROLE) {
-        require(tokensBurnable, "NFT: tokens burning is disabled");
-        require(_exists(_tokenId), "Burn for nonexistent token");
-        require(
-            ERC721.ownerOf(_tokenId) == _owner,
-            "NFT: tokens may be burned by owner only"
-        );
-        _burn(_tokenId);
-    }
-
-    function update(
-        Config.Runtime calldata newConfig,
-        RoleAddresses[] memory rolesAddresses
-    )
-        public
-        // bool isRevokeNFTPortPermissions
-        onlyRole(UPDATE_CONTRACT_ROLE)
-    {
-        // If metadata is frozen, baseURI cannot be updated
-        require(
-            metadataUpdatable ||
-                (keccak256(abi.encodePacked(newConfig.baseURI)) ==
-                    keccak256(abi.encodePacked(baseURI))),
-            "Metadata is frozen"
-        );
-
-        baseURI = newConfig.baseURI;
-        royaltiesBasisPoints = newConfig.royaltiesBps;
-
-        if (!newConfig.tokensTransferable) {
-            tokensTransferable = false;
-        }
-        if (!newConfig.metadataUpdatable && metadataUpdatable) {
-            metadataUpdatable = false;
-            emit PermanentURIGlobal();
-        }
-
-        _updateRoles(rolesAddresses);
-
-        // TODO: Revoke permission for factory contract - owned by CREABO
-
-        // if (isRevokeNFTPortPermissions) {
-        //     revokeNFTPortPermissions();
-        // }
     }
 
     function totalSupply() public view virtual returns (uint256) {
@@ -425,7 +356,7 @@ contract ERC721NFTCustom is Initializable, ERC721URIStorage, ERC2771Context {
         return true;
     }
 
-    function updateMerkleRoot(bytes32 _merkleRoot) public onlyRole(ADMIN_ROLE) {
+    function updateMerkleRoot(bytes32 _merkleRoot) public  {
         merkleRoot = _merkleRoot;
 
         // This should be frozen after updating the root

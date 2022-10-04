@@ -21,9 +21,27 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     speed: "fast",
   });
 
+  console.log(deployer);
+  const args = {
+    deployConfig: {
+      name: "Dino Reward",
+      symbol: "DRT",
+      owner: deployer,
+      tokensBurnable: false,
+      tokenCounter: "0x1901E1D9f2554a6605379Be7dBe4004c6DAacCd1",
+    },
+    runConfig: {
+      baseURI: "ipfs://", //TODO: From env
+      metadataUpdatable: true,
+      tokensTransferable: true,
+      isRoyaltiesEnabled: true,
+      royaltiesBps: 250,
+    },
+  };
+
   const ERC721NFTCustom = await ethers.getContractFactory("ERC721NFTCustom");
   const collection = await ERC721NFTCustom.connect(relaySigner)
-    .deploy(MinimalForwarder)
+    .deploy(args.deployConfig, args.runConfig, MinimalForwarder)
     .then((f) => f.deployed());
 
   writeFileSync(
